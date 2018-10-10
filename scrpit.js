@@ -1,8 +1,3 @@
-const config = {
-	'email': 'coeurro@gmail.com',
-	'password': 'Cockrxx6r2*'
-};
-
 var casper = require('casper').create({
 	verbose: false,
 	logLevel: "debug",
@@ -21,8 +16,8 @@ casper.on('remote.message', function(message) {
 
 casper.waitForSelector("input[type='email']", function() {
 	this.fillSelectors('div.connectZone', {
-		'input[type = email ]' : config.email,
-		'input[type = password ]' : config.password
+		'input[type = email ]' : casper.cli.get('email'),
+		'input[type = password ]' : casper.cli.get('password')
 		}, true);
         console.log("Logging In...")
 	this.click('a#btnConnect');
