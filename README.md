@@ -1,10 +1,11 @@
-#Autobook script
+# Autobook script
 
-##Install
+## Install Rpi
 
     cd ~/Downloads
 
 * Install nodejs
+
 
     sudo apt-get update
     sudo apt-get install nodejs npm
@@ -15,6 +16,7 @@
 
 * Install phantomjs
 
+
     git clone https://github.com/piksel/phantomjs-raspberrypi.git
     chmod -x phantomjs-raspberrypi/bin/phantomjs
     chmod 775 phantomjs-raspberrypi/bin/phantomjs
@@ -23,10 +25,12 @@
 
 * Install casperjs
 
+
     sudo npm install -g casperjs
     casper
 
 * Install and run scrapper
+
 
     git clone https://github.com/romaincoeur/autobook.git
     casperjs autobook/script.js --email=<your email> --password=<password>
