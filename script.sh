@@ -1,19 +1,37 @@
+#!/bin/sh
 
+# usage :
+# ./scritp.sh <email> <password>
 
-// Get access token
-curl -c cookies.txt https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/home.jsp | grep token
+# Print datetime
+dt=$(date '+%d/%m/%Y %H:%M:%S');
+echo "$dt"
 
-// Login
-curl -c cookies.txt -b cookies.txt -d "login=coeurro@gmail.com&password=azerty1234&facebookId=&token=977a4ab788b9a490a160" -X POST 'https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/processConnect.jsp' >> cookies.txt
+# Get access token
+token=`curl -s -c cookies.txt https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/home.jsp | grep token | cut -d' ' -f4 | sed -e 's/^"//' -e 's/";$//'`
+echo "token : $token"
 
-// Modifier le fichier cookies.txt à la main : message devient password
-gedit cookies.txt
+# Login
+message=`curl -s -c cookies.txt -b cookies.txt -d "login=$1&password=$2&token=$token" -X POST 'https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/processConnect.jsp' | grep message | cut -d'"' -f8`
+echo "message : $message"
 
-// Get new token
-curl -b cookies.txt 'https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/home.jsp' | grep token
+# Ajouter message dans le fichier cookies.txt
+tail -n 1 cookies.txt | sed -e 's/SERVERID/password/g' | sed -e "s/cwt/${message}/g" | sed -e "s/asp/${message}/g" | sed -e "s/asp2/${message}/g" >> cookies.txt
 
-// fetch calendar events
-curl -b cookies.txt 'https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/loadCalendarEvents.jsp?token=7474aa5f7dd85e20e39c&id=14723627&idGroup=1257&category=Fitness'
+# Get new token
+token=`curl -s -b cookies.txt 'https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/home.jsp' | grep token | cut -d' ' -f4 | sed -e 's/^"//' -e 's/";$//'`
+echo "token : $token"
 
-// Make reservation
-curl -b cookies.txt 'https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/processResa.jsp?idEntry=507541&status=pending&action=makeResa'
+# fetch calendar events
+events=`curl -s -b cookies.txt "https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/loadCalendarEvents.jsp?token=$token&id=14723627&idGroup=1257&category=Fitness" | jq -c '[.[] | {start:.dtstart, id:.id}]'`
+
+# Make reservations
+echo $events | jq -c '.[]' | while read event; do
+	time=`echo $event | jq '.start' | cut -d' ' -f2 | sed -e 's/"$//'`
+	if [ $time = "12:30:00" ]
+	then
+		id=`echo $event | jq '.id'`
+		resa=`curl -s -b cookies.txt "https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/processResa.jsp?idEntry=$id&status=pending&action=makeResa"`
+		echo `echo $resa | jq '.code'`
+	fi
+done
