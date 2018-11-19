@@ -31,7 +31,7 @@ echo $events | jq -c '.[]' | while read event; do
 	if [ $time = "12:30:00" ]
 	then
 		id=`echo $event | jq '.id'`
-		resa=`curl -s -b cookies.txt "https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/processResa.jsp?idEntry=$id&status=pending&action=makeResa"`
+		resa=`curl -s -b cookies.txt "https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/processResa.jsp?idEntry=$id&status=reserve&action=makeResa"`
 		echo `echo $resa | jq '.code'`
 	fi
 done
