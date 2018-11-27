@@ -25,12 +25,16 @@ echo "token : $token"
 # fetch calendar events
 events=`curl -s -b cookies.txt "https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/loadCalendarEvents.jsp?token=$token&id=14723627&idGroup=1257&category=Fitness" | jq -c '[.[] | {start:.dtstart, id:.id}]'`
 
-# Make reservations
+# Make reservation
+nextDate=$(date --date="+6 day" '+%Y-%m-%d')
+nextDateTime="$nextDate 12:30:00"
+
 echo $events | jq -c '.[]' | while read event; do
-	time=`echo $event | jq '.start' | cut -d' ' -f2 | sed -e 's/"$//'`
-	if [ $time = "12:30:00" ]
+	dateTime=`echo $event | jq '.start' | sed -e 's/^"//' -e 's/"$//'`
+	if [ "$dateTime" = "$nextDateTime" ]
 	then
 		id=`echo $event | jq '.id'`
+		echo "reservation made onto $id"
 		resa=`curl -s -b cookies.txt "https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/processResa.jsp?idEntry=$id&status=reserve&action=makeResa"`
 		echo `echo $resa | jq '.code'`
 	fi
