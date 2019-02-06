@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # usage :
-# ./scritp.sh <email> <password>
+# ./scritp.sh <email> <password> <time(12:30:00)>
 
 # Print datetime
 dt=$(date '+%d/%m/%Y %H:%M:%S');
@@ -27,7 +27,7 @@ events=`curl -s -b cookies.txt "https://espacemembre.movidaclub.fr/AdelyaClientS
 
 # Make reservation
 nextDate=$(date --date="+6 day" '+%Y-%m-%d')
-nextDateTime="$nextDate 12:30:00"
+nextDateTime="$nextDate $3"
 
 echo $events | jq -c '.[]' | while read event; do
 	dateTime=`echo $event | jq '.start' | sed -e 's/^"//' -e 's/"$//'`
