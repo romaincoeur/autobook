@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # usage :
-# ./scritp.sh <email> <password> <time(12:30:00)>
+# ./scritp.sh <email> <password> <time(12:30:00)> <idMember>
 
 # Print datetime
 dt=$(date '+%d/%m/%Y %H:%M:%S');
@@ -23,7 +23,7 @@ token=`curl -s -b cookies.txt 'https://espacemembre.movidaclub.fr/AdelyaClientSp
 echo "token : $token"
 
 # fetch calendar events
-events=`curl -s -b cookies.txt "https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/loadCalendarEvents.jsp?token=$token&id=14723627&idGroup=1257&category=Fitness" | jq -c '[.[] | {start:.dtstart, id:.id}]'`
+events=`curl -s -b cookies.txt "https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/loadCalendarEvents.jsp?token=$token&id=$4&idGroup=1257&category=Fitness" | jq -c '[.[] | {start:.dtstart, id:.id}]'`
 
 # Make reservation
 nextDate=$(date --date="+6 day" '+%Y-%m-%d')
