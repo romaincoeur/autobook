@@ -16,7 +16,7 @@ nextDate=$(date -v+6d +'%d%%2F%m%%2F%Y')
 hours=$(echo "$3" | cut -d ":" -f 1)
 minutes=$(echo "$3" | cut -d ":" -f 2)
 timeslot=$((12*hours + minutes/5))
-events=$(curl -s -b cookies.txt "https://resa-movida.deciplus.pro/sp_lecons_planning.php?idz=3&sport=49&date=10%2F01%2F2020" | grep "|cours|$timeslot")
+events=$(curl -s -b cookies.txt "https://resa-movida.deciplus.pro/sp_lecons_planning.php?idz=3&sport=49&date=$nextDate" | grep "|cours|$timeslot")
 
 # Make reservation
 id=$(echo "$events" | cut -d ">" -f 2 | cut -d "|" -f 1)
