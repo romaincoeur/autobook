@@ -1,41 +1,28 @@
 #!/bin/sh
 
 # usage :
-# ./scritp.sh <email> <password> <time(12:30:00)> <idMember>
+# ./scritp.sh <email> <password> <time(12:30)>
 
 # Print datetime
-dt=$(date '+%d/%m/%Y %H:%M:%S');
-echo "$dt"
+now=$(date '+%d/%m/%Y %H:%M:%S');
+echo "$now"
 
-# Get access token
-token=`curl -s -c cookies.txt https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/home.jsp | grep token | cut -d' ' -f4 | sed -e 's/^"//' -e 's/";$//'`
-echo "token : $token"
-
-# Login
-message=`curl -s -c cookies.txt -b cookies.txt -d "login=$1&password=$2&token=$token" -X POST 'https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/processConnect.jsp' | grep message | cut -d'"' -f8`
-echo "message : $message"
-
-# Ajouter message dans le fichier cookies.txt
-tail -n 1 cookies.txt | sed -e 's/SERVERID/password/g' | sed -e "s/cwt/${message}/g" | sed -e "s/asp/${message}/g" | sed -e "s/asp2/${message}/g" >> cookies.txt
-
-# Get new token
-token=`curl -s -b cookies.txt 'https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/home.jsp' | grep token | cut -d' ' -f4 | sed -e 's/^"//' -e 's/";$//'`
-echo "token : $token"
+# Get auth cookie
+curl -s -c cookies.txt -b cookies.txt -d "sp_mail=$1&sp_pwd=$2" -X POST 'https://resa-movida.deciplus.pro/sp_accueil.php' > /dev/null
 
 # fetch calendar events
-events=`curl -s -b cookies.txt "https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/loadCalendarEvents.jsp?token=$token&id=$4&idGroup=1257&category=Fitness" | jq -c '[.[] | {start:.dtstart, id:.id}]'`
+#nextDate=$(date --date="+6 day" '+%d%%2F%m%%2F%Y')
+nextDate=$(date -v+6d +'%d%%2F%m%%2F%Y')
+hours=$(echo "$3" | cut -d ":" -f 1)
+minutes=$(echo "$3" | cut -d ":" -f 2)
+timeslot=$((12*hours + minutes/5))
+events=$(curl -s -b cookies.txt "https://resa-movida.deciplus.pro/sp_lecons_planning.php?idz=3&sport=49&date=10%2F01%2F2020" | grep "|cours|$timeslot")
 
 # Make reservation
-nextDate=$(date --date="+6 day" '+%Y-%m-%d')
-nextDateTime="$nextDate $3"
-
-echo $events | jq -c '.[]' | while read event; do
-	dateTime=`echo $event | jq '.start' | sed -e 's/^"//' -e 's/"$//'`
-	if [ "$dateTime" = "$nextDateTime" ]
-	then
-		id=`echo $event | jq '.id'`
-		echo "reservation made onto $id"
-		resa=`curl -s -b cookies.txt "https://espacemembre.movidaclub.fr/AdelyaClientSpe/movida/process/processResa.jsp?idEntry=$id&status=reserve&action=makeResa"`
-		echo `echo $resa | jq '.code'`
-	fi
-done
+id=$(echo "$events" | cut -d ">" -f 2 | cut -d "|" -f 1)
+echo "Event id : $id"
+result=$(curl -s -b cookies.txt -d "idr=$id&sport=49&act=new&etat_resa=init&islist=2&idz=3&invite=0&nbcascade=0&ipl" -X POST 'https://resa-movida.deciplus.pro/sp_reserver_lecon.php?&idz=3' -i | grep "HTTP/1.1" | cut -d " " -f 2)
+if [ "$result" = "200" ]
+then
+  echo "Reservation made for $1"
+fi
