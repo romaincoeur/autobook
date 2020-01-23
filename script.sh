@@ -23,14 +23,8 @@ hours=$(echo "$3" | cut -d ":" -f 1)
 minutes=$(echo "$3" | cut -d ":" -f 2)
 timeslot=$((12*hours + minutes/5))
 events=$(curl -s -b cookies.txt "https://resa-movida.deciplus.pro/sp_lecons_planning.php?idz=3&sport=$4&date=$nextDate" | grep "|cours|$timeslot")
-
-# Make reservation
-id=$(echo "$events" | cut -d ">" -f 2 | cut -d "|" -f 1)
-result=$(curl -s -b cookies.txt -d "idr=$id&sport=$4&act=new&etat_resa=init&islist=2&idz=3&invite=0&nbcascade=0&ipl" -X POST 'https://resa-movida.deciplus.pro/sp_reserver_lecon.php?&idz=3' -i | grep "HTTP/1.1" | cut -d " " -f 2)
-if [ "$result" = "200" ] && [ -n "$id" ]
+if [ -z "$events" ]
 then
-  echo "Reservation made for $1 at $3 with id $id"
-else
   echo "**************ERROR**************"
   echo "*"
   echo "* Params"
@@ -42,7 +36,29 @@ else
   echo "* Call stack"
   echo "* nextDate : $nextDate"
   echo "* timeslot : $timeslot"
-  echo "* events : $events"
-  echo "* id : $id"
+  curl -s -b cookies.txt "https://resa-movida.deciplus.pro/sp_lecons_planning.php?idz=3&sport=$4&date=$nextDate" | grep creneau\"\>1
   echo "*********************************"
+else
+  # Make reservation
+  id=$(echo "$events" | cut -d ">" -f 2 | cut -d "|" -f 1)
+  result=$(curl -s -b cookies.txt -d "idr=$id&sport=$4&act=new&etat_resa=init&islist=2&idz=3&invite=0&nbcascade=0&ipl" -X POST 'https://resa-movida.deciplus.pro/sp_reserver_lecon.php?&idz=3' -i | grep "HTTP/1.1" | cut -d " " -f 2)
+  if [ "$result" = "200" ] && [ -n "$id" ]
+  then
+    echo "Reservation made for $1 at $3 with id $id"
+  else
+    echo "**************ERROR**************"
+    echo "*"
+    echo "* Params"
+    echo "* Email : $1"
+    echo "* Password : $2"
+    echo "* Time : $3"
+    echo "* Sport : $4"
+    echo "*"
+    echo "* Call stack"
+    echo "* nextDate : $nextDate"
+    echo "* timeslot : $timeslot"
+    echo "* events : $events"
+    echo "* id : $id"
+    echo "*********************************"
+  fi
 fi
